@@ -28,8 +28,8 @@ TH1D* h_KoloHist[2];
 TH1D *h_xjz_chi2_KS_AD;
 TH1D *h_dphi_chi2_KS_AD;
 
-double CalcChiSq(TH1D *h1, TH1D *h2, int firstBin, int lastBin);
-double CalcKoloSm(TH1D *h1, TH1D *h2, int firstBin, int lastBin, int option, int ikolo);
+#include "CompatibilityHelperFunctions.C"
+
 
 void UsePPAsComparison()
 {
@@ -41,7 +41,7 @@ void UsePPAsComparison()
   int renormalize_toy         = 0;
 
   int normalize_pp2pb         = 0;
-  int nPseudoExp = 10;
+  int nPseudoExp = 1000;
   double BlowUpErrors = 1.0;
   int FirstBin_xjz = 1;//2
   int LastBin_xjz  = 8;//12
@@ -72,17 +72,17 @@ void UsePPAsComparison()
 
   //TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/NEW/zJetHistogramSum_HI_PP_31Aug2016.root");
   //TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/NEW/zJetHistogramSum_HI_PP_31Aug2016.root");
-  //TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");
-  //TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");  
-  TFile *f_pb = TFile::Open("$CODE/ZJet/Frankenstein.root");
-  TFile *f_pp = TFile::Open("$CODE/ZJet/Frankenstein.root");
+  TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");
+  TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");  
+  //TFile *f_pb = TFile::Open("$CODE/ZJet/Frankenstein.root");
+  //TFile *f_pp = TFile::Open("$CODE/ZJet/Frankenstein.root");
 
-  xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_raw_stat_pb");
-  xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_bkg_stat_pb");
-  xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("xjz_raw_stat_pp");
-  //xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetRAW_final_norm");
-  //xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetBKG_final_norm");
-  //xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_xjz_binJER_ptBin0_hiBin0_jetRAW_final_norm");
+  //xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_raw_stat_pb");
+  //xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_bkg_stat_pb");
+  //xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("xjz_raw_stat_pp");
+  xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetRAW_final_norm");
+  xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetBKG_final_norm");
+  xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_xjz_binJER_ptBin0_hiBin0_jetRAW_final_norm");
   //xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_ptBin0_hiBin1_jetRAW_final_norm");
   //xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_ptBin0_hiBin1_jetBKG_final_norm");
   //xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_xjz_ptBin0_hiBin0_jetRAW_final_norm");
@@ -390,6 +390,7 @@ void UsePPAsComparison()
 
   h_Chisq_xjz = new TH1D("h_Chisq_xjz","#chi^{2};#chi^{2} of x_{JZ}",100,0,50);
   h_KolSm_xjz = new TH1D("h_KolSm_xjz","Kolmogorov-Smirnov;KS of x_{JZ}"      ,550,0,1.1);
+  //h_KolSm_xjz = new TH1D("h_KolSm_xjz","Kolmogorov-Smirnov;KS of x_{JZ}"      ,110,0,55);
   h_AndDr_xjz = new TH1D("h_AndDr_xjz","Anderson-Darling;AD of x_{JZ}"      ,100,0,50);
 
   TCanvas *c3 = new TCanvas("c3","c3");
@@ -470,7 +471,7 @@ void UsePPAsComparison()
     //double Pvalue = xjz_sum_stat_pp->Chi2TestX(h_toy_xjz,chi2,ndf,igood,"WW");
     double Pvalue = 1.0;
     chi2 = CalcChiSq(xjz_sum_stat_pp,h_toy_xjz, FirstBin_xjz,LastBin_xjz);
-    double kolo = xjz_sum_stat_pp->KolmogorovTest(h_toy_xjz,"M");
+    double kolo = xjz_sum_stat_pp->KolmogorovTest(h_toy_xjz,"M");//"MN");
     kolo = CalcKoloSm(xjz_sum_stat_pp, h_toy_xjz, FirstBin_xjz,LastBin_xjz, 1, -1);
     //double andr = xjz_sum_stat_pp->AndersonDarlingTest(h_toy_xjz,"T");
     double andr = 1;
@@ -503,7 +504,7 @@ void UsePPAsComparison()
   double Pvalue = 1.0;
   chi2_xjz = CalcChiSq(xjz_raw_stat_pb,xjz_sum_stat_pp, FirstBin_xjz,LastBin_xjz);
   //h_pb[i]->Chi2Test(h_pp[i],"WW,P");
-  double kolo_xjz = xjz_raw_stat_pb->KolmogorovTest(xjz_sum_stat_pp,"M");
+  double kolo_xjz = xjz_raw_stat_pb->KolmogorovTest(xjz_sum_stat_pp,"M");//"MN");
   kolo_xjz = CalcKoloSm(xjz_raw_stat_pb, xjz_sum_stat_pp, FirstBin_xjz,LastBin_xjz, 1, 0);
   //double andr = xjz_raw_stat_pb->AndersonDarlingTest(xjz_sum_stat_pp,"T");
   double andr_xjz = 1;
@@ -514,7 +515,7 @@ void UsePPAsComparison()
                << "ad " << 1.0-h_AndDr_xjz->Integral(1,h_AndDr_xjz->GetXaxis()->FindBin(andr_xjz))/h_AndDr_xjz->Integral(1,h_AndDr_xjz->GetNbinsX()) << endl;
 
   cout << "compared to built in P-Values: " << endl;
-  cout << "ch " << Pvalue << "   "
+  cout << "ch " << xjz_raw_stat_pb->Chi2Test(xjz_sum_stat_pp,"WW") << "   "
        << "ks " << xjz_raw_stat_pb->KolmogorovTest(xjz_sum_stat_pp) << "   "
        << "ad " << xjz_raw_stat_pb->AndersonDarlingTest(xjz_sum_stat_pp) << endl;
   h_xjz_chi2_KS_AD  ->SetBinContent(1,chi2_xjz);
@@ -638,7 +639,7 @@ void UsePPAsComparison()
                << "ad " << 1.0-h_AndDr_dphi->Integral(1,h_AndDr_dphi->GetXaxis()->FindBin(andr_dphi))/h_AndDr_dphi->Integral(1,h_AndDr_dphi->GetNbinsX()) << endl;
 
   cout << "compared to built in P-Values: " << endl;
-  cout << "ch " << Pvalue << "   "
+  cout << "ch " << dphi_raw_stat_pb->Chi2Test(dphi_sum_stat_pp,"WW") << "   "
        << "ks " << dphi_raw_stat_pb->KolmogorovTest(dphi_sum_stat_pp) << "   "
        << "ad " << dphi_raw_stat_pb->AndersonDarlingTest(dphi_sum_stat_pp) << endl;
   h_dphi_chi2_KS_AD  ->SetBinContent(1,chi2_dphi);
@@ -657,7 +658,8 @@ void UsePPAsComparison()
   line_chi2_xjz->Draw("same");
 
   c2->cd(2);
-  h_KolSm_xjz->GetXaxis()->SetRangeUser(0,0.2);
+  //h_KolSm_xjz->GetXaxis()->SetRangeUser(0,0.2);
+  h_KolSm_xjz->GetXaxis()->SetRangeUser(0,50.0);
   h_KolSm_xjz->Draw();
   TLine *line_kolo_xjz = new TLine(kolo_xjz,0,kolo_xjz,h_KolSm_xjz->GetMaximum());
   line_kolo_xjz->SetLineColor(2);
@@ -715,7 +717,8 @@ void UsePPAsComparison()
 
     //sprintf(saythis,"JasonToyMC_norm%d_ppflucts%d_nExp%d_Error%2.2f.root",normalize_pp_or_pbpb,include_ppflucts_in_toy,nPseudoExp,BlowUpErrors);
     //sprintf(saythis,"Fall2016/JasonToyMC_31Aug_norm%d_ppflucts%d_nExp%d_Error%2.2f_RenormalizeToy%d_normpp2pb%d_xjzcut_%d_%d.root",normalize_pp_or_pbpb,include_ppflucts_in_toy,nPseudoExp,BlowUpErrors,renormalize_toy,normalize_pp2pb,FirstBin_xjz,LastBin_xjz);
-    sprintf(saythis,"Jan2017/JasonToyMC_31JanFrankenstein_norm%d_ppflucts%d_nExp%d_Error%2.2f_RenormalizeToy%d_normpp2pb%d_xjzcut_%d_%d.root",normalize_pp_or_pbpb,include_ppflucts_in_toy,nPseudoExp,BlowUpErrors,renormalize_toy,normalize_pp2pb,FirstBin_xjz,LastBin_xjz);
+    //sprintf(saythis,"Jan2017/JasonToyMC_31JanFrankenstein_norm%d_ppflucts%d_nExp%d_Error%2.2f_RenormalizeToy%d_normpp2pb%d_xjzcut_%d_%d.root",normalize_pp_or_pbpb,include_ppflucts_in_toy,nPseudoExp,BlowUpErrors,renormalize_toy,normalize_pp2pb,FirstBin_xjz,LastBin_xjz);
+    sprintf(saythis,"../Jan2017/JasonToyMC_31Jan_norm%d_ppflucts%d_nExp%d_Error%2.2f_RenormalizeToy%d_normpp2pb%d_xjzcut_%d_%d.root",normalize_pp_or_pbpb,include_ppflucts_in_toy,nPseudoExp,BlowUpErrors,renormalize_toy,normalize_pp2pb,FirstBin_xjz,LastBin_xjz);
     TFile *fout = new TFile(saythis,"NEW");
     c1->Write();
     c2->Write();
@@ -780,99 +783,3 @@ void UsePPAsComparison()
 
 }
 
-double CalcChiSq(TH1D *h1, TH1D *h2, int firstBin, int lastBin)
-{
-
-  double chisq = 0.0;
-  double delta = 0.0;
-  double errsq = 0.0;
-
-  if(h1->GetNbinsX() != h2->GetNbinsX()){
-    cout << "JJ::CalcChiSq() --> histograms don't have same number of bins !!" << endl;
-    return 0;
-  }
-
-  if(firstBin<0)
-    firstBin=1;
-  if(lastBin<0)
-    lastBin=h1->GetNbinsX();
-
-  for(int i=firstBin; i<lastBin+1; i++){
-    double h1cont = h1->GetBinContent(i);
-    double h2cont = h2->GetBinContent(i);
-    double h1err  = h1->GetBinError  (i);
-    double h2err  = h2->GetBinError  (i);
-
-    if(h1cont !=0 && h2cont !=0){
-      delta = (h1cont-h2cont);
-      errsq = h1err*h1err + h2err*h2err;
-      chisq += delta*delta/errsq;
-    }
-
-  }
-
-  return chisq;
-}
-
-double CalcKoloSm(TH1D *h1, TH1D *h2, int firstBin, int lastBin, int option, int ikolo)
-{
-
-  //
-  // options: 
-  // 1: normalized (this is the standard way!)
-  // 2: un-normalized
-  //
-
-  char saykolo[500];
-  double dfmax  = 0.0;
-  double dfmaxN = 0.0;
-  double sum1   = 0.0;
-  double sum2   = 0.0;
-
-  if(ikolo>=0){
-    sprintf(saykolo,"h_KoloHist_%d",ikolo);
-    h_KoloHist[ikolo] = (TH1D*)h1->Clone(saykolo);
-    h_KoloHist[ikolo]->Reset();
-  }
-
-  if(h1->GetNbinsX() != h2->GetNbinsX()){
-    cout << "JJ::CalcKoloSm() --> histograms don't have same number of bins !!" << endl;
-    return 0;
-  }
-
-  if(firstBin<0)
-    firstBin=1;
-  if(lastBin<0)
-    lastBin=h1->GetNbinsX();
-
-  for(int i=firstBin; i<lastBin+1; i++)
-    sum1 += h1->GetBinContent(i);
-  for(int i=firstBin; i<lastBin+1; i++)
-    sum2 += h2->GetBinContent(i);
-
-  for(int i=firstBin; i<lastBin+1; i++){
-    double h1cont  = h1->GetBinContent(i);
-    double h2cont  = h2->GetBinContent(i);
-    double h1err   = h1->GetBinError  (i);
-    double h2err   = h2->GetBinError  (i);
-    double mydiff  = fabs(h1cont-h2cont);
-    double mydiffN = fabs(h1cont/sum1-h2cont/sum2);
-
-    if(ikolo>=0){
-      h_KoloHist[ikolo]->SetBinContent(i,mydiffN);
-      h_KoloHist[ikolo]->SetBinError  (i,0.0);
-    }
-
-    if(h1cont !=0 && h2cont !=0){
-      if(mydiff>dfmax)
-        dfmax = mydiff;
-      if(mydiffN>dfmaxN)
-        dfmaxN = mydiffN;
-    }
-
-  }
-
-  if(option==1)      return dfmaxN;
-  else if(option==2) return dfmax;
-  else               return -1;
-}
