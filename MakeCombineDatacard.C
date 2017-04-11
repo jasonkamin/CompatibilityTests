@@ -1,3 +1,5 @@
+#include <math.h>
+
 TH1D *xjz_raw_stat_pp;
 TH1D *xjz_raw_stat_pb;
 TH1D *xjz_bkg_stat_pb;
@@ -22,14 +24,20 @@ TH1D *h_KolSm;
 TH1D *h_AndDr;
 
 void MakeDataCardFromHistos(TH1D *h1, TH1D *h2, TH1D *h3, int startbin, int nBins);
+void PrintSystUncertainty(double *percent_uncert, TH1 *h_data, int FirstBin, int LastBin, char *category, char *type);
+void PrintSystUncertainty2(double *percent_uncert_lo, double *percent_uncert_hi, TH1 *h_data, int FirstBin, int LastBin, char *category, char *type);
 
-// 20 July 2016
+// 21 March 2017
 // this should make the fully combined datacard !
+// now can accept asymmetric, correlated uncertainties.  
+// however, they are input inside of MakeDataCardFromHistos(), 
+// which makes it actually pretty inconvenient !! 
 void MakeCombineDatacard()
 {
 
   double BlowUpErrors = 1.0;
   char saythis[500];
+  int pTbin = 0;
 
   //TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/NEW/zJetHistogramSum_5Jul2016.root");
   //TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/NEW/zJetHistogramSumPP_5Jul2016.root");
@@ -38,24 +46,26 @@ void MakeCombineDatacard()
 
   //TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/NEW/zJetHistogramSum_HI_PP_31Aug2016.root");
   //TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/NEW/zJetHistogramSum_HI_PP_31Aug2016.root");
-  //TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");
-  //TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");
-  TFile *f_pb = TFile::Open("$CODE/ZJet/Frankenstein.root");
-  TFile *f_pp = TFile::Open("$CODE/ZJet/Frankenstein.root");
+  TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");
+  TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");
+
+  //TFile *f_pb = TFile::Open("$CODE/ZJet/Frankenstein.root");
+  //TFile *f_pp = TFile::Open("$CODE/ZJet/Frankenstein.root");
 
   //xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_ptBin0_hiBin1_jetRAW_final_norm");
   //xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_ptBin0_hiBin1_jetBKG_final_norm");
   //xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_xjz_ptBin0_hiBin0_jetRAW_final_norm");
-  //xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetRAW_final_norm");
-  //xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetBKG_final_norm");
-  //xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_xjz_binJER_ptBin0_hiBin0_jetRAW_final_norm");
-  xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_raw_stat_pb");
-  xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_bkg_stat_pb");
-  xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("xjz_raw_stat_pp");
+  sprintf(saythis,"h1D_xjz_binJER_ptBin%d_hiBin1_jetRAW_final_norm",pTbin); xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get(saythis);
+  sprintf(saythis,"h1D_xjz_binJER_ptBin%d_hiBin1_jetBKG_final_norm",pTbin); xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get(saythis);
+  sprintf(saythis,"h1D_xjz_binJER_ptBin%d_hiBin0_jetRAW_final_norm",pTbin); xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get(saythis);
 
-  dphi_raw_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_dphi_rebin_ptBin0_hiBin1_jetRAW_final_norm");
-  dphi_bkg_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_dphi_rebin_ptBin0_hiBin1_jetBKG_final_norm");
-  dphi_raw_stat_pp = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_dphi_rebin_ptBin0_hiBin0_jetRAW_final_norm");
+  //xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_raw_stat_pb");
+  //xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_bkg_stat_pb");
+  //xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("xjz_raw_stat_pp");
+
+  sprintf(saythis,"h1D_dphi_rebin_ptBin%d_hiBin1_jetRAW_final_norm",pTbin); dphi_raw_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get(saythis);
+  sprintf(saythis,"h1D_dphi_rebin_ptBin%d_hiBin1_jetBKG_final_norm",pTbin); dphi_bkg_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get(saythis);
+  sprintf(saythis,"h1D_dphi_rebin_ptBin%d_hiBin0_jetRAW_final_norm",pTbin); dphi_raw_stat_pp = (TH1D*)f_pp->GetDirectory("PP")->Get(saythis);
 
   for(int i=1; i<xjz_raw_stat_pp->GetNbinsX()+1; i++){
     xjz_raw_stat_pp->SetBinError(i,BlowUpErrors*xjz_raw_stat_pp->GetBinError(i));
@@ -141,7 +151,7 @@ void MakeCombineDatacard()
   cout << endl << endl;
 
   cout << "=====================================================" << endl << endl;
-  MakeDataCardFromHistos(dphi_raw_stat_pp, dphi_raw_stat_pb, dphi_bkg_stat_pb, -1,-1);
+  //MakeDataCardFromHistos(dphi_raw_stat_pp, dphi_raw_stat_pb, dphi_bkg_stat_pb, -1,-1);
   cout << "=====================================================" << endl << endl;
   //MakeDataCardFromHistos(xjz_raw_stat_pp, xjz_raw_stat_pb, xjz_bkg_stat_pb,1,8);// using 10 bin scheme "binJER"
   //MakeDataCardFromHistos(xjz_raw_stat_pp, xjz_raw_stat_pb, xjz_bkg_stat_pb,2,12);//using 16 bin scheme (non JER)
@@ -225,7 +235,10 @@ void MakeDataCardFromHistos(TH1D *h_pp, TH1D *h_pb, TH1D *h_bg, int startbin, in
 
   cout << "observation";
   for(int i=startbin; i<nBins+1; i++){
-    sprintf(saythis,"%8d",int(floor( h_pp->GetBinContent(i)*h_pp->GetBinContent(i)/(h_pp->GetBinError(i)*h_pp->GetBinError(i))+0.5 )));
+    if(h_pp->GetBinContent(i)>0)
+      sprintf(saythis,"%8d",int(floor( h_pp->GetBinContent(i)*h_pp->GetBinContent(i)/(h_pp->GetBinError(i)*h_pp->GetBinError(i))+0.5 )));
+    else
+      sprintf(saythis,"%8d",0);
     cout << saythis;
   }
   for(int i=startbin; i<nBins+1; i++){
@@ -291,7 +304,10 @@ void MakeDataCardFromHistos(TH1D *h_pp, TH1D *h_pb, TH1D *h_bg, int startbin, in
   cout << "rate       ";
   for(int i=startbin; i<nBins+1; i++){
     //sprintf(saythis,"%10.6f", h1->GetBinError(i)*h1->GetBinError(i)/h1->GetBinContent(i) );
-    sprintf(saythis,"%9.4f", h_pp->GetBinContent(i)/(h_pp->GetBinError(i)*h_pp->GetBinError(i)) );
+    if(h_pp->GetBinContent(i)>0)
+      sprintf(saythis,"%9.4f", h_pp->GetBinContent(i)/(h_pp->GetBinError(i)*h_pp->GetBinError(i)) );
+    else
+      sprintf(saythis,"  0.0001");
     cout << saythis;
   }
   for(int i=startbin; i<nBins+1; i++){
@@ -318,10 +334,18 @@ void MakeDataCardFromHistos(TH1D *h_pp, TH1D *h_pb, TH1D *h_bg, int startbin, in
   cout << "# 'physics values' means 'what is in the final fully-normalized plot'" << endl;
 
   for(int i=startbin; i<nBins+1; i++){
-    if(i<10)
-      sprintf(saythis,"dx%d           param  %4.2f  100  [0,100]",i,h_pb->GetBinContent(i)/h_pp->GetBinContent(i));
-    else
-      sprintf(saythis,"dx%d          param  %4.2f  100  [0,100]",i,h_pb->GetBinContent(i)/h_pp->GetBinContent(i));
+    if(h_pp->GetBinContent(i)>0){
+      if(i<10)
+        sprintf(saythis,"dx%d           param  %4.2f  100  [0,100]",i,h_pb->GetBinContent(i)/h_pp->GetBinContent(i));
+      else
+        sprintf(saythis,"dx%d          param  %4.2f  100  [0,100]",i,h_pb->GetBinContent(i)/h_pp->GetBinContent(i));
+    }
+    else{
+      if(i<10)
+        sprintf(saythis,"dx%d           param  0.00  100  [0,100]",i);
+      else
+        sprintf(saythis,"dx%d          param  0.00  100  [0,100]",i);
+    }
     cout << saythis << endl;
   }
 
@@ -345,7 +369,7 @@ void MakeDataCardFromHistos(TH1D *h_pp, TH1D *h_pb, TH1D *h_bg, int startbin, in
 
 
   for(int j=startbin; j<nBins+1; j++){
-    sprintf(saythis,"statbkg%d lnN    ",j);
+    sprintf(saythis,"statbkg%d  lnN    ",j);
     cout << saythis;
     for(int i=startbin; i<nBins+1; i++){
       cout << "  -     ";
@@ -366,6 +390,185 @@ void MakeDataCardFromHistos(TH1D *h_pp, TH1D *h_pb, TH1D *h_bg, int startbin, in
     }
     cout << endl;
   }
+
+
+  char namepp[5]; sprintf(namepp,"pp");
+  char namepb[5]; sprintf(namepb,"Pb");
+  char namebg[5]; sprintf(namebg,"Bg");
+  char namecat[50];
+
+  double xjz_syst_pp[10]   = {59.8,  4.9,  3.1,  3.1,  4.1,  7.1,  7.1,  7.1,  7.1,  7.1};
+  double xjz_syst_PbPb[10] = {44.6, 11.4,  9.8,  9.8, 12.4, 18.6, 18.6, 18.6, 18.6, 18.6};
+  double xjz_syst_bkg[10]  = {19.1,  8.8,  9.1,  9.1,  7.8, 12.4,  8.6,  8.6,  0.1,  0.1};
+
+  //sprintf(namecat,"Tot");
+  //PrintSystUncertainty(xjz_syst_pp,   h_pp, startbin, nBins, namecat, namepp);
+  //PrintSystUncertainty(xjz_syst_PbPb, h_pb, startbin, nBins, namecat, namepb);
+  //PrintSystUncertainty(xjz_syst_bkg,  h_bg, startbin, nBins, namecat, namebg);
+
+
+  //############################### xjz SYSTEMATICS ZpT>60 #####################################
+  //PB, SIG correlation : (currently not used; we separate SIG into RAW and BKG)
+  //double xjz_syst_JES_pb[10] = {10.5   10.5   4.5    4.5    7.2    15.7   15.7   15.7   15.7 15.7   jet energy scale
+  //double xjz_syst_EES_pb[10] = {0.9    0.9    1.1    1.1    1.1    1.7    1.7    1.7    1.7  1.7     electron energy scale
+  //double xjz_syst_JER_pb[10] = {0.3    0.3    6.8    6.8    9.8    2.5    2.5    2.5    2.5  2.5     jet energy resolution
+  //double xjz_syst_ZER_pb[10] = {3.4    3.4    1.4    1.4    1.2    6.9    6.9    6.9    6.9  6.9     Z energy resolution
+  //double xjz_syst_ZEF_pb[10] = {5.1    5.1    6.4    6.4    4.0    6.2    6.2    6.2    6.2  6.2     Z reconstruction efficiency correction
+  //double xjz_syst_TOT_pb[10] = {12.2   12.2   10.5   10.5   12.9   18.5   18.5   18.5   18.5 18.5   total
+
+
+// ########## (sent from Kaya on March 17th, 2017)
+// 1. For pp, you will need to feed the JES uncertainties twice.
+// 2. For PbPb, you will need to feed the JES1 once and JES2 twice.
+// 
+// xjz (zPt > 60) JES up and down systematics
+// #####
+// pp
+// JES UP   :  2.7,  2.7,  1.2,  1.2,  1.7, -5.3, -5.3, -5.3, -5.3, -5.3
+// JES DOWN : -2.0, -2.0, -1.9, -1.9, -1.5,  5.5,  5.5,  5.5,  5.5, 5.5
+// 
+// #####
+// PbPb (zpT > 60), SIG 
+// JES1 UP   :  8.7,   8.7,  3.2, 3.2, -6.6, -14.2, -14.2, -14.2, -14.2, -14.2
+// JES1 DOWN : -10.1, -10.1, 2.7, 2.7,  4.8,   9.8,   9.8,   9.8, 9.8,   9.8
+// JES2 UP   :  1.8,   1.8,  1.2, 1.2, -1.3,  -1.4,  -1.4,  -1.4, -1.4,  -1.4
+// JES2 DOWN : -2.8,  -2.8,  2.9, 2.9, -0.2,   7.6,   7.6,   7.6, 7.6,   7.6
+// 
+// ##########
+// xjz (zPt > 60), RAW correlation
+// #####
+// PbPb
+// JES1 UP   : -7.2, -7.2, -3.5, -3.5, -7.5, -12.0, -12.0, -12.0, -12.0, -12.0
+// JES1 DOWN :  2.0, 2.0, 4.5, 4.5, 5.3, 7.5, 7.5, 7.5, 7.5, 7.5
+// JES2 UP   : -3.5, -3.5, -1.3, -1.3, -3.5, 1.2, 1.2, 1.2, 1.2, 1.2
+// JES2 DOWN :  3.0, 3.0, 3.6, 3.6, 3.2, 7.8, 7.8, 7.8, 7.8, 7.8
+// 
+// ##########
+// xjz (zPt > 60), BKG correlation
+// #####
+// PbPb
+// JES1 UP   : -24.8, -24.8, -27.5, -27.5, -43.8, -20.1, -20.1, -20.1, -20.1, -20.1
+// JES1 DOWN :  16.3, 16.3, 16.4, 16.4, 20.8, 20.5, 20.5, 20.5, 20.5, 20.5
+// JES2 UP   :  -9.9, -9.9, -10.6, -10.6, -13.7, -10.8, -10.8, -10.8, -10.8, -10.8
+// JES2 DOWN :   9.7, 9.7, 9.4, 9.4, 11.6, 11.2, 11.2, 11.2, 11.2, 11.2
+// 
+// 
+//
+// ##########
+// rjz JES up and down systematics
+// #####
+// pp
+// rjz bins   pt>40, pt>50, pt >60, 40-50, 50-60, 60-80, pt>80
+// JES UP   :  -1.6, -1.5, -1.3, -2.4, -1.6, -1.6, -1.3
+// JES DOWN :   1.6,  1.5,  1.2,  2.5,  1.6,  1.7,  1.2
+// 
+// #####
+// PbPb
+// rjz bins    pt>40, pt>50, pt >60, 40-50, 50-60, 60-80, pt>80
+// JES1 UP   :  -3.3, -3.1, -1.9, -10.1, -8.1, -2.6, -2.0
+// JES1 DOWN :   1.9,  2.0,  0.9,   7.5,  4.9,  2.3,  2.3
+// JES2 UP   :  -2.1, -1.6, -1.4, -5.3, -4.7, -2.3, -1.6
+// JES2 DOWN :   1.9,  1.8,  0.7,  5.5,  4.1,  1.4,  0.4
+// 
+// ##########
+// rjz JES up and down systematics, RAW correlation
+// #####
+// PbPb
+// rjz bins    pt>40, pt>50, pt >60, 40-50, 50-60, 60-80, pt>80
+// JES1 UP   : -12.1, -10.8, -8.4, -20.4, -18.2, -9.8, -5.9
+// JES1 DOWN :   7.1, 6.5, 4.8, 13.5, 11.3, 5.4, 3.0
+// JES2 UP   :  -2.2, -1.7, -1.5, -3.5, -3.3, -3.0, 1.2
+// JES2 DOWN :   4.6, 4.2, 3.1, 7.2, 6.5, 3.4, 2.1
+// 
+// ##########
+// rjz JES up and down systematics, BKG correlation
+// #####
+// PbPb
+// rjz bins    pt>40, pt>50, pt >60, 40-50, 50-60, 60-80, pt>80
+// JES1 UP   : -29.2, -28.8, -27.5, -30.1, -30.8, -23.9, -25.2
+// JES1 DOWN :  17.2, 17.2, 16.0, 19.2, 19.8, 15.6, 16.3
+// JES2 UP   : -10.5, -10.3, -10.0, -11.7, -12.3, -9.8, -10.5
+// JES2 DOWN :   9.1, 9.9, 9.9, 11.4, 11.6, 9.0, 9.1
+// ##########
+
+
+
+  //PP, SIG correlation :
+  double xjz_syst_JES_pp[10] = {3.4   , 3.4   , 2.8   , 2.8   , 2.6   , 6.8   , 6.8   , 6.8   , 6.8  , 6.8 }; //  jet energy scale
+  // if we use the un-symmetrized values, insert them twice, independently.
+  double xjz_syst_JES_pp_lo[10] = {2.7,    2.7,    1.2,    1.2,    1.7,   -5.3,   -5.3,   -5.3,   -5.3,  -5.3 }; //  jet energy scale
+  double xjz_syst_JES_pp_hi[10] = {-2.0,  -2.0,   -1.9,   -1.9,   -1.5,    5.5,    5.5,    5.5,    5.5,   5.5 }; //  jet energy scale
+
+  double xjz_syst_EES_pp[10] = {2.4   , 2.4   , 1.1   , 1.1   , 1.6   , 2.1   , 2.1   , 2.1   , 2.1  , 2.1 }; //  electron energy scale
+  double xjz_syst_JER_pp[10] = {2.6   , 2.6   , 0.8   , 0.8   , 2.6   , 0.3   , 0.3   , 0.3   , 0.3  , 0.3 }; //  jet energy resolution
+  double xjz_syst_JAR_pp[10] = {0.4   , 0.4   , 0.4   , 0.4   , 0.1   , 0.1   , 0.1   , 0.1   , 0.1  , 0.1 }; //  jet angular resolution
+  double xjz_syst_TOT_pp[10] = {4.9   , 4.9   , 3.1   , 3.1   , 4.1   , 7.1   , 7.1   , 7.1   , 7.1  , 7.1 }; //  total
+
+
+  //PB RAW correlation :
+  double xjz_syst_JES_pb[10] = {8.1   , 8.1   , 6.3   , 6.3   , 8.5   , 15.8  , 15.8  , 15.8  , 15.8 , 15.8}; //     jet energy scale
+  // if we use the un-symmetrized values, insert JES1 once and JES2 twice, independently.
+  double xjz_syst_JES1_pb_lo[10] = {-7.2, -7.2, -3.5, -3.5, -7.5, -12.0, -12.0, -12.0, -12.0, -12.0}; //     jet energy scale 1
+  double xjz_syst_JES1_pb_hi[10] = { 2.0, 2.0, 4.5, 4.5, 5.3, 7.5, 7.5, 7.5, 7.5, 7.5              }; //     jet energy scale 1
+  double xjz_syst_JES2_pb_lo[10] = {-3.5, -3.5, -1.3, -1.3, -3.5, 1.2, 1.2, 1.2, 1.2, 1.2          }; //     jet energy scale 2
+  double xjz_syst_JES2_pb_hi[10] = { 3.0, 3.0, 3.6, 3.6, 3.2, 7.8, 7.8, 7.8, 7.8, 7.8              }; //     jet energy scale 2
+
+  double xjz_syst_EES_pb[10] = {0.6   , 0.6   , 1.0   , 1.0   , 1.1   , 1.7   , 1.7   , 1.7   , 1.7  , 1.7 }; //    electron energy scale
+  double xjz_syst_JER_pb[10] = {3.5   , 3.5   , 2.2   , 2.2   , 8.0   , 2.8   , 2.8   , 2.8   , 2.8  , 2.8 }; //    jet energy resolution
+  double xjz_syst_ZER_pb[10] = {2.2   , 2.2   , 0.9   , 0.9   , 1.0   , 6.8   , 6.8   , 6.8   , 6.8  , 6.8 }; //    Z energy resolution
+  double xjz_syst_ZEF_pb[10] = {6.8   , 6.8   , 7.0   , 7.0   , 4.1   , 6.2   , 6.2   , 6.2   , 6.2  , 6.2 }; //    Z reconstruction efficiency correction
+  double xjz_syst_TOT_pb[10] = {11.4  , 11.4  , 9.8   , 9.8   , 12.4  , 18.6  , 18.6  , 18.6  , 18.6 , 18.6}; //   total
+
+
+  //PB BKG correlation :
+  double xjz_syst_JES_bg[10] = {26.9  , 26.9  , 30.6  , 30.6  ,  47.8 ,  23.5 ,  10.1 ,  10.1 , 0.1  , 0.1 }; //  jet energy scale
+  // if we use the un-symmetrized values, insert JES1 once and JES2 twice, independently.
+  double xjz_syst_JES1_bg_lo[10] = { -24.8, -24.8, -27.5, -27.5, -43.8, -20.1, -20.1, -20.1, -20.1, -20.1}; //     jet energy scale 1
+  double xjz_syst_JES1_bg_hi[10] = {  16.3, 16.3, 16.4, 16.4, 20.8, 20.5, 20.5, 20.5, 20.5, 20.5         }; //     jet energy scale 1
+  double xjz_syst_JES2_bg_lo[10] = {  -9.9, -9.9, -10.6, -10.6, -13.7, -10.8, -10.8, -10.8, -10.8, -10.8 }; //     jet energy scale 2
+  double xjz_syst_JES2_bg_hi[10] = {   9.7, 9.7, 9.4, 9.4, 11.6, 11.2, 11.2, 11.2, 11.2, 11.2            }; //     jet energy scale 2
+
+  double xjz_syst_EES_bg[10] = {0.4   , 0.4   , 0.8   , 0.8   ,  4.6  ,  1.0  ,  1.0  ,  1.0  , 0.1  , 0.1 }; //  electron energy scale
+  double xjz_syst_JER_bg[10] = {7.8   , 7.8   , 15.4  , 15.4  ,  46.8 ,  22.0 ,  1.0  ,  2.0  , 0.1  , 0.1 }; //  jet energy resolution
+  double xjz_syst_ZER_bg[10] = {0.8   , 0.8   , 1.0   , 1.0   ,  6.4  ,  5.2  ,  26.0 ,  26.0 , 0.1  , 0.1 }; //  Z energy resolution
+  double xjz_syst_ZEF_bg[10] = {8.8   , 8.8   , 9.1   , 9.1   ,  7.8  ,  12.4 ,  8.6  ,  8.6  , 0.1  , 0.1 }; //  Z reconstruction efficiency correction
+  double xjz_syst_TOT_bg[10] = {29.4  , 29.4  , 35.5  , 35.5  ,  67.8 ,  34.9 ,  29.3 ,  29.3 , 0.1  , 0.1 }; //  total
+
+  //sprintf(namecat,"JES");  PrintSystUncertainty(xjz_syst_JES_pp, h_pp, startbin, nBins, namecat, namepp);
+  sprintf(namecat,"JESa");  PrintSystUncertainty2(xjz_syst_JES_pp_lo, xjz_syst_JES_pp_hi, h_pp, startbin, nBins, namecat, namepp);
+  sprintf(namecat,"JESb");  PrintSystUncertainty2(xjz_syst_JES_pp_lo, xjz_syst_JES_pp_hi, h_pp, startbin, nBins, namecat, namepp);
+  sprintf(namecat,"EES");  PrintSystUncertainty(xjz_syst_EES_pp, h_pp, startbin, nBins, namecat, namepp);
+  sprintf(namecat,"JER");  PrintSystUncertainty(xjz_syst_JER_pp, h_pp, startbin, nBins, namecat, namepp);
+  sprintf(namecat,"JAR");  PrintSystUncertainty(xjz_syst_JAR_pp, h_pp, startbin, nBins, namecat, namepp);
+                      
+  //sprintf(namecat,"JES");  PrintSystUncertainty(xjz_syst_JES_pb, h_pb, startbin, nBins, namecat, namepb);
+  sprintf(namecat,"JES1");   PrintSystUncertainty2(xjz_syst_JES1_pb_lo, xjz_syst_JES1_pb_hi, h_pb, startbin, nBins, namecat, namepb);
+  sprintf(namecat,"JES2a");  PrintSystUncertainty2(xjz_syst_JES2_pb_lo, xjz_syst_JES2_pb_hi, h_pb, startbin, nBins, namecat, namepb);
+  sprintf(namecat,"JES2b");  PrintSystUncertainty2(xjz_syst_JES2_pb_lo, xjz_syst_JES2_pb_hi, h_pb, startbin, nBins, namecat, namepb);
+  sprintf(namecat,"EES");  PrintSystUncertainty(xjz_syst_EES_pb, h_pb, startbin, nBins, namecat, namepb);
+  sprintf(namecat,"JER");  PrintSystUncertainty(xjz_syst_JER_pb, h_pb, startbin, nBins, namecat, namepb);
+  sprintf(namecat,"ZER");  PrintSystUncertainty(xjz_syst_ZER_pb, h_pb, startbin, nBins, namecat, namepb);
+  sprintf(namecat,"ZEF");  PrintSystUncertainty(xjz_syst_ZEF_pb, h_pb, startbin, nBins, namecat, namepb);
+                      
+  //sprintf(namecat,"JES");  PrintSystUncertainty(xjz_syst_JES_bg, h_bg, startbin, nBins, namecat, namebg);
+  sprintf(namecat,"JES1");   PrintSystUncertainty2(xjz_syst_JES1_bg_lo, xjz_syst_JES1_bg_hi, h_bg, startbin, nBins, namecat, namebg);
+  sprintf(namecat,"JES2a");  PrintSystUncertainty2(xjz_syst_JES2_bg_lo, xjz_syst_JES2_bg_hi, h_bg, startbin, nBins, namecat, namebg);
+  sprintf(namecat,"JES2b");  PrintSystUncertainty2(xjz_syst_JES2_bg_lo, xjz_syst_JES2_bg_hi, h_bg, startbin, nBins, namecat, namebg);
+  sprintf(namecat,"EES");  PrintSystUncertainty(xjz_syst_EES_bg, h_bg, startbin, nBins, namecat, namebg);
+  sprintf(namecat,"JER");  PrintSystUncertainty(xjz_syst_JER_bg, h_bg, startbin, nBins, namecat, namebg);
+  sprintf(namecat,"ZER");  PrintSystUncertainty(xjz_syst_ZER_bg, h_bg, startbin, nBins, namecat, namebg);
+  sprintf(namecat,"ZEF");  PrintSystUncertainty(xjz_syst_ZEF_bg, h_bg, startbin, nBins, namecat, namebg);
+
+  //############################### xjz SYSTEMATICS #####################################
+
+
+  //for(int i=0; i<10; i++){
+  //  cout << TMath::Sqrt(xjz_syst_JES1_pb_lo[i]*xjz_syst_JES1_pb_lo[i] + xjz_syst_JES2_pb_lo[i]*xjz_syst_JES2_pb_lo[i] + xjz_syst_JES2_pb_lo[i]*xjz_syst_JES2_pb_lo[i]) << endl;
+  //  cout << TMath::Sqrt(xjz_syst_JES1_pb_hi[i]*xjz_syst_JES1_pb_hi[i] + xjz_syst_JES2_pb_hi[i]*xjz_syst_JES2_pb_hi[i] + xjz_syst_JES2_pb_hi[i]*xjz_syst_JES2_pb_hi[i]) << endl;
+  //  cout << xjz_syst_JES_pb[i] << endl;
+  //}
+
+
 
 
   // Now make a README.... 
@@ -417,7 +620,7 @@ void MakeDataCardFromHistos(TH1D *h_pp, TH1D *h_pb, TH1D *h_bg, int startbin, in
       else if(i==nBins) sprintf(saythis,"dx%d",i);
       cout << saythis;
     }
-    cout << " --algo fixed --snapshotName MultiDimFit --forceRecreateNLL  -t 10" << endl << endl;
+    cout << " --algo fixed --snapshotName MultiDimFit --forceRecreateNLL  -t 10  (include '--toysFrequentist'  if running 2dNLL w/ systematics. otherwise don't.) moreover, if you want to save the toys, include '--saveToys' " << endl << endl;
 
     cout << "### to set xhat to the pp values for a new saved workspace change the x1,x2,etc ranges to be the pp values. then they're locked." << endl;
     cout << "### run 10 toys after setting xhat to the pp values" << endl;
@@ -458,6 +661,80 @@ void MakeDataCardFromHistos(TH1D *h_pp, TH1D *h_pb, TH1D *h_bg, int startbin, in
 */
 
   return;
-
-
 }
+
+
+
+void PrintSystUncertainty(double *percent_uncert, TH1 *h_data, int FirstBin, int LastBin, char *category, char *systemtype)
+{
+
+  char saythis[500];
+  double adhoc_extra = 0.00;//0.01;
+
+  sprintf(saythis,"syst%s_%s     lnN    ",category,systemtype);
+  cout << saythis;
+  for(int i=FirstBin; i<LastBin+1; i++){
+    if(h_data->GetBinContent(i)>0 && strcmp(systemtype,"pp")==0)
+      sprintf(saythis,"  %4.4f ",1.0+adhoc_extra+0.01*percent_uncert[i-1]);
+    else
+      sprintf(saythis,"  -     ");
+    cout << saythis;
+  }
+  for(int i=FirstBin; i<LastBin+1; i++){
+    if(h_data->GetBinContent(i)>0 && strcmp(systemtype,"Pb")==0)
+      sprintf(saythis,"  %4.4f ",1.0+adhoc_extra+0.01*percent_uncert[i-1]);
+    else
+      sprintf(saythis,"  -     ");
+    cout << saythis;
+  }
+  for(int i=FirstBin; i<LastBin+1; i++){
+    if(h_data->GetBinContent(i)>0 && strcmp(systemtype,"Bg")==0)
+      sprintf(saythis,"  %4.4f ",1.0+adhoc_extra+0.01*percent_uncert[i-1]);
+    else
+      sprintf(saythis,"  -     ");
+    cout << saythis;
+  }
+  cout << endl;
+
+
+  return;
+}
+
+
+
+
+void PrintSystUncertainty2(double *percent_uncert_lo, double *percent_uncert_hi, TH1 *h_data, int FirstBin, int LastBin, char *category, char *systemtype)
+{
+
+  char saythis[500];
+  double adhoc_extra = 0.00;//0.01;
+
+  sprintf(saythis,"syst%s_%s     lnN    ",category,systemtype);
+  cout << saythis;
+  for(int i=FirstBin; i<LastBin+1; i++){
+    if(h_data->GetBinContent(i)>0 && strcmp(systemtype,"pp")==0)
+      sprintf(saythis,"  %4.4f/%4.4f ",1.0+copysign(adhoc_extra,percent_uncert_lo[i-1])+0.01*percent_uncert_lo[i-1],1.0+copysign(adhoc_extra,percent_uncert_hi[i-1])+0.01*percent_uncert_hi[i-1]);
+    else
+      sprintf(saythis,"  -     ");
+    cout << saythis;
+  }
+  for(int i=FirstBin; i<LastBin+1; i++){
+    if(h_data->GetBinContent(i)>0 && strcmp(systemtype,"Pb")==0)
+      sprintf(saythis,"  %4.4f/%4.4f ",1.0+adhoc_extra+0.01*percent_uncert_lo[i-1],1.0+adhoc_extra+0.01*percent_uncert_hi[i-1]);
+    else
+      sprintf(saythis,"  -     ");
+    cout << saythis;
+  }
+  for(int i=FirstBin; i<LastBin+1; i++){
+    if(h_data->GetBinContent(i)>0 && strcmp(systemtype,"Bg")==0)
+      sprintf(saythis,"  %4.4f/%4.4f ",1.0+adhoc_extra+0.01*percent_uncert_lo[i-1],1.0+adhoc_extra+0.01*percent_uncert_hi[i-1]);
+    else
+      sprintf(saythis,"  -     ");
+    cout << saythis;
+  }
+  cout << endl;
+
+
+  return;
+}
+
