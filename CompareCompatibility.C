@@ -34,7 +34,8 @@ using namespace std;
 using namespace RooFit;
 using namespace RooStats;
 
-
+TH1D *h_KoloHist[1000];
+#include "CompatibilityHelperFunctions.C"
 
 TH1D *deltaNLL_xjz  ;
 TH1D *deltaNLL_dphi ;
@@ -69,7 +70,9 @@ TH1D *dphi_xhat;
 TH1D *xjz_xhat;
 
 TH1D *combinetoys_dphi[20];
-TH1D *combinetoys_xjz[20];
+TH1D *combinetoys_xjz[1000];
+TH1D *combinetoys_xjz_pp[1000];
+TH1D *combinetoys_xjz_hi[1000];
 
 double q_CS_xjz  = 20.7958;
 double q_CS_dphi = 14.2788;
@@ -99,23 +102,35 @@ double xhat_dphi[8] = {
   1.15056	 ,
   2.33174	 
 };
-double xhat_xjz[16] = {
-  1.80288e-12,
-  0.108666	 ,
-  0.238436	 ,
-  0.461928	 ,
-  0.69946	   ,
-  0.684536	 ,
-  0.74338	   ,
-  0.660996	 ,
-  0.496388	 ,
-  0.270276	 ,
-  0.155466	 ,
-  0.10244	   ,
-  0.0410323	 ,
-  0.0356612	 ,
-  0.0237741	 ,
-  0.0237741	 
+//double xhat_xjz[16] = {
+//  1.80288e-12,
+//  0.108666	 ,
+//  0.238436	 ,
+//  0.461928	 ,
+//  0.69946	   ,
+//  0.684536	 ,
+//  0.74338	   ,
+//  0.660996	 ,
+//  0.496388	 ,
+//  0.270276	 ,
+//  0.155466	 ,
+//  0.10244	   ,
+//  0.0410323	 ,
+//  0.0356612	 ,
+//  0.0237741	 ,
+//  0.0237741	 
+//};
+double xhat_xjz[10] = {
+  0.0353911,
+  0.241088 ,
+  0.662822 ,
+  0.703122 ,
+  0.707346 ,
+  0.415173 ,
+  0.17212	 ,
+  0.0597739,
+  0.0284729,
+  0.0213548
 };
 
 double exhat_dphi[8] = {
@@ -128,56 +143,70 @@ double exhat_dphi[8] = {
   0.093693,
   0.134107
 };
-double exhat_xjz[16] = {
-  0.0059419,
-  0.0347425,
-  0.0525188,
-  0.0689161,
-  0.0821144,
-  0.0793953,
-  0.0829732,
-  0.0779541,
-  0.0675646,
-  0.0470781,
-  0.0357688,
-  0.0324704,
-  0.0183484,
-  0.0205836,
-  0.0168064,
-  0.0168064
+//double exhat_xjz[16] = {
+//  0.0059419,
+//  0.0347425,
+//  0.0525188,
+//  0.0689161,
+//  0.0821144,
+//  0.0793953,
+//  0.0829732,
+//  0.0779541,
+//  0.0675646,
+//  0.0470781,
+//  0.0357688,
+//  0.0324704,
+//  0.0183484,
+//  0.0205836,
+//  0.0168064,
+//  0.0168064
+//};
+double exhat_xjz[10] = {
+  0.016026,
+  0.042593,
+  0.069004,
+  0.065969,
+  0.068895,
+  0.056002,
+  0.033017,
+  0.019370,
+  0.014391,
+  0.012430
 };
 
 void PutToyInHisto(RooDataSet *rooToy, TH1D *htoy, TH1D *eff, int ch);
 
-void CompareCompatibility()
+void CompareCompatibility(int ptbinKaya = 0)
 {
 
-  char saythis[500];
+  char saythis[500];  char histoname[100];
+
+  int calculate_ks_from_toys = 1;
+  int frequentisttoys        = 0;
+  //int ptbinKaya = 0;
+
+
+  char toytype[20];
+  if(frequentisttoys==1)  sprintf(toytype,"1000ToysFreq");
+  else                    sprintf(toytype,"1000Toys");
+  char f_combine_toy_xjz_name[500];
+  char f_combine_val_xjz_name[500];
 
   char infilename[500];
-  //sprintf(infilename,"JasonToyMC_norm1_ppflucts1_nExp1000_Error1.00_RenormalizeToy0_normpp2pb0_xjzcut_2_12.root");
-  //sprintf(infilename,"Fall2016/JasonToyMC_31Aug_norm1_ppflucts1_nExp1000_Error1.00_RenormalizeToy0_normpp2pb0_xjzcut_2_12.root");
-  //sprintf(infilename,"Jan2017/JasonToyMC_31Jan_norm1_ppflucts1_nExp1000_Error1.00_RenormalizeToy0_normpp2pb0_xjzcut_1_9.root");
-  sprintf(infilename,"Jan2017/JasonToyMC_31Jan_norm1_ppflucts1_nExp1000_Error1.00_RenormalizeToy0_normpp2pb0_xjzcut_1_8.root");
+  //sprintf(infilename,"../Jan2017/JasonToyMC_31Jan_norm1_ppflucts1_nExp1000_Error1.00_RenormalizeToy0_normpp2pb0_xjzcut_1_8.root");
+  sprintf(infilename,"../Jan2017/JasonToyMC_ptBin%d_31Jan_norm2_ppflucts1_nExp1000_Error1.00_RenormalizeToy0_normpp2pb0_xjzcut_1_8.root",ptbinKaya);
   TFile *f_JasonToyMC   = TFile::Open(infilename);
-  //TFile *f_JasonToyMC   = TFile::Open("JasonToyMC_norm1_ppflucts1_nExp1000_Error1.00_RenormalizeToy1_normpp2pb0_xjzcut_2_12.root");
-  //TFile *f_JasonToyMC   = TFile::Open("JasonToyMC_norm1_ppflucts1_nExp1000_Error1.00_RenormalizeToy0_normpp2pb1_xjzcut_2_12.root");
   
 
-  //TFile *f_combine_toy_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.fitxhat.xjz_cut_2_12.limits.123456.root");
-  //  TFile *f_combine_toy_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.ppxhat.xjz.limitsdx.seeds.root");
-  //TFile *f_combine_toy_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.ppxhat2.xjz_cut_2_12.6051981.root");
-  //TFile *f_combine_val_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.fitxhat.xjz_cut_2_12.limits.root");
-  //TFile *f_combine_val_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.fitxhat.xjz.limitsdx.root");
-  //  TFile *f_combine_val_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.ppxhat.xjz_cut_2_12.root");
-  //TFile *f_combine_toy_xjz  = TFile::Open("Fall2016/higgsCombineTest.MultiDimFit.fitxhat.xjz_cut_2_12.1000toys.root");
-  //TFile *f_combine_val_xjz  = TFile::Open("Fall2016/higgsCombineTest.MultiDimFit.fitxhat.xjz_cut_2_12.root");
-  //TFile *f_combine_toy_xjz  = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.xjz_cut_1_8.1000toys.root");
-  //TFile *f_combine_val_xjz  = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.xjz_cut_1_8.root");
-  TFile *f_combine_toy_xjz  = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.xjz.1000toys.root");
-  TFile *f_combine_val_xjz  = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.xjz.root");
   //TFile *f_combine_toy_xjz  = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.xjz_frankenstein.1000toys.root");
   //TFile *f_combine_val_xjz  = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.xjz_frankenstein.root");
+   
+  sprintf(f_combine_toy_xjz_name,"../Mar2017/Mar21/higgsCombineTest.MultiDimFit.fitxhat.xjz_pt%d.syst.%s.root",ptbinKaya,toytype);
+  cout << "opening " << f_combine_toy_xjz_name << endl;
+  TFile *f_combine_toy_xjz  = TFile::Open(f_combine_toy_xjz_name);
+  sprintf(f_combine_val_xjz_name,"../Mar2017/Mar21/higgsCombineTest.MultiDimFit.fitxhat.xjz_pt%d.syst.root",ptbinKaya);
+  cout << "opening " << f_combine_val_xjz_name << endl;
+  TFile *f_combine_val_xjz  = TFile::Open(f_combine_val_xjz_name);
 
   //TFile *f_combine_toy_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.fitxhat.xjz.limitsdx.123456.root");
   //TFile *f_combine_val_xjz  = TFile::Open("higgsCombineTest.MultiDimFit.fitxhat.xjz.limitsdx.root");
@@ -188,8 +217,8 @@ void CompareCompatibility()
   //  TFile *f_combine_val_dphi = TFile::Open("higgsCombineTest.MultiDimFit.ppxhat.dphi.root");
   //TFile *f_combine_toy_dphi = TFile::Open("Fall2016/higgsCombineTest.MultiDimFit.fitxhat.dphi.1000toys.root");
   //TFile *f_combine_val_dphi = TFile::Open("Fall2016/higgsCombineTest.MultiDimFit.fitxhat.dphi.root");
-  TFile *f_combine_toy_dphi = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.dphi.1000toys.root");
-  TFile *f_combine_val_dphi = TFile::Open("Jan2017/higgsCombineTest.MultiDimFit.fitxhat.dphi.root");
+  TFile *f_combine_toy_dphi = TFile::Open("../Jan2017/higgsCombineTest.MultiDimFit.fitxhat.dphi.1000toys.root");
+  TFile *f_combine_val_dphi = TFile::Open("../Jan2017/higgsCombineTest.MultiDimFit.fitxhat.dphi.root");
 
 
   TF1 *jg  = new TF1("jg", "gaus(0)",0,5);
@@ -221,16 +250,22 @@ void CompareCompatibility()
   TFile *f_pb = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");
   TFile *f_pp = TFile::Open("$OUTPUT/ZJet_Kaya/Jan23_2017/zJetHistogramSum_HI_PP_20170118.root");  
 
-  xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetRAW_final_norm");
-  xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_xjz_binJER_ptBin0_hiBin1_jetBKG_final_norm");
-  xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_xjz_binJER_ptBin0_hiBin0_jetRAW_final_norm");
+  sprintf(histoname,"h1D_xjz_binJER_ptBin%d_hiBin1_jetRAW_final_norm",ptbinKaya);
+  xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get(histoname);
+  sprintf(histoname,"h1D_xjz_binJER_ptBin%d_hiBin1_jetBKG_final_norm",ptbinKaya);
+  xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get(histoname);
+  sprintf(histoname,"h1D_xjz_binJER_ptBin%d_hiBin0_jetRAW_final_norm",ptbinKaya);
+  xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get(histoname);
   //xjz_raw_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_raw_stat_pb");
   //xjz_bkg_stat_pb  = (TH1D*)f_pb->GetDirectory("HI")->Get("xjz_bkg_stat_pb");
   //xjz_raw_stat_pp  = (TH1D*)f_pp->GetDirectory("PP")->Get("xjz_raw_stat_pp");
 
-  dphi_raw_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_dphi_rebin_ptBin0_hiBin1_jetRAW_final_norm");
-  dphi_bkg_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get("h1D_dphi_rebin_ptBin0_hiBin1_jetBKG_final_norm");
-  dphi_raw_stat_pp = (TH1D*)f_pp->GetDirectory("PP")->Get("h1D_dphi_rebin_ptBin0_hiBin0_jetRAW_final_norm");
+  sprintf(histoname,"h1D_dphi_rebin_ptBin%d_hiBin1_jetRAW_final_norm",ptbinKaya);
+  dphi_raw_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get(histoname);
+  sprintf(histoname,"h1D_dphi_rebin_ptBin%d_hiBin1_jetBKG_final_norm",ptbinKaya);
+  dphi_bkg_stat_pb = (TH1D*)f_pb->GetDirectory("HI")->Get(histoname);
+  sprintf(histoname,"h1D_dphi_rebin_ptBin%d_hiBin0_jetRAW_final_norm",ptbinKaya);
+  dphi_raw_stat_pp = (TH1D*)f_pp->GetDirectory("PP")->Get(histoname);
 
   //xjz_raw_stat_pp  = (TH1D*)f_JasonToyMC  ->Get("xjz_raw_stat_pp");
   //xjz_raw_stat_pb  = (TH1D*)f_JasonToyMC  ->Get("xjz_raw_stat_pb");
@@ -240,8 +275,18 @@ void CompareCompatibility()
   //dphi_raw_stat_pb = (TH1D*)f_JasonToyMC  ->Get("dphi_raw_stat_pb");
   //dphi_bkg_stat_pb = (TH1D*)f_JasonToyMC  ->Get("dphi_bkg_stat_pb");
 
-  dphi_sum_stat_pp  = (TH1D*)f_JasonToyMC  ->Get("dphi_sum_stat_pp");
-  xjz_sum_stat_pp   = (TH1D*)f_JasonToyMC  ->Get("xjz_sum_stat_pp");
+  dphi_sum_stat_pp  = (TH1D*)dphi_raw_stat_pp->Clone("dphi_sum_stat_pp");
+  xjz_sum_stat_pp   = (TH1D*)xjz_raw_stat_pp ->Clone("xjz_sum_stat_pp");
+  dphi_sum_stat_pp  ->Add(dphi_bkg_stat_pb,1.0);
+  xjz_sum_stat_pp   ->Add(xjz_bkg_stat_pb ,1.0);
+  dphi_sum_stat_pp  ->SetMarkerStyle(24);
+  xjz_sum_stat_pp   ->SetMarkerStyle(24);
+  dphi_sum_stat_pp  ->SetMarkerColor(8);
+  xjz_sum_stat_pp   ->SetMarkerColor(8);
+  dphi_sum_stat_pp  ->SetLineColor  (8);
+  xjz_sum_stat_pp   ->SetLineColor  (8);
+  //dphi_sum_stat_pp  = (TH1D*)f_JasonToyMC  ->Get("dphi_sum_stat_pp");
+  //xjz_sum_stat_pp   = (TH1D*)f_JasonToyMC  ->Get("xjz_sum_stat_pp");
   h_Chisq_dphi      = (TH1D*)f_JasonToyMC  ->Get("h_Chisq_dphi");
   h_Chisq_xjz       = (TH1D*)f_JasonToyMC  ->Get("h_Chisq_xjz");
   h_KolSm_dphi      = (TH1D*)f_JasonToyMC  ->Get("h_KolSm_dphi");
@@ -257,15 +302,24 @@ void CompareCompatibility()
   xjz_sub_stat_pb   ->Add(xjz_bkg_stat_pb, -1);
 
 
-  TFile *f_combine_toys_ex_xjz  = TFile::Open("Summer2016/higgsCombineTest.MultiDimFit.fitxhat.xjz.limitsdx.50saveToys.123456.root");
-  TFile *f_combine_toys_ex_dphi = TFile::Open("Summer2016/higgsCombineTest.MultiDimFit.fitxhat.dphi.limitsdx.50saveToys.123456.root");
+  sprintf(f_combine_toy_xjz_name,"../Mar2017/Mar21/higgsCombineTest.MultiDimFit.fitxhat.xjz_pt%d.syst.%s.root",ptbinKaya,toytype);
+  cout << "opening " << f_combine_toy_xjz_name << endl;
+  TFile *f_combine_toys_ex_xjz  = TFile::Open(f_combine_toy_xjz_name);
+  TFile *f_combine_toys_ex_dphi = TFile::Open("../Summer2016/higgsCombineTest.MultiDimFit.fitxhat.dphi.limitsdx.50saveToys.123456.root");
   TDirectory *mytoysdir_xjz  = (TDirectory*)f_combine_toys_ex_xjz->GetDirectory("toys");
   TDirectory *mytoysdir_dphi = (TDirectory*)f_combine_toys_ex_dphi->GetDirectory("toys");
 
   eff_pb_xjz  = (TH1D*)xjz_raw_stat_pb ->Clone("eff_pb_xjz");
   for(int i=1; i<eff_pb_xjz->GetNbinsX()+1; i++){
-    eff_pb_xjz->SetBinContent(i,eff_pb_xjz->GetBinError(i)*eff_pb_xjz->GetBinError(i)/eff_pb_xjz->GetBinContent(i));
-    eff_pb_xjz->SetBinError  (i,0.0);
+    if(eff_pb_xjz->GetBinContent(i)>0){
+      eff_pb_xjz->SetBinContent(i,eff_pb_xjz->GetBinError(i)*eff_pb_xjz->GetBinError(i)/eff_pb_xjz->GetBinContent(i));
+      eff_pb_xjz->SetBinError  (i,0.0);
+    }
+    else{
+      eff_pb_xjz->SetBinContent(i,0.0);
+      eff_pb_xjz->SetBinError  (i,0.0);
+    }
+    //cout << " eff[" << i << "] = " << eff_pb_xjz->GetBinContent(i) << endl;
   }
   eff_pb_dphi = (TH1D*)dphi_raw_stat_pb->Clone("eff_pb_dphi");
   for(int i=1; i<eff_pb_dphi->GetNbinsX()+1; i++){
@@ -274,8 +328,15 @@ void CompareCompatibility()
   }
   eff_pp_xjz  = (TH1D*)xjz_sum_stat_pp ->Clone("eff_pp_xjz");
   for(int i=1; i<eff_pp_xjz->GetNbinsX()+1; i++){
+    if(eff_pp_xjz->GetBinContent(i)>0){
     eff_pp_xjz->SetBinContent(i,eff_pp_xjz->GetBinError(i)*eff_pp_xjz->GetBinError(i)/eff_pp_xjz->GetBinContent(i));
     eff_pp_xjz->SetBinError  (i,0.0);
+    }
+    else{
+      eff_pp_xjz->SetBinContent(i,0.0);
+      eff_pp_xjz->SetBinError  (i,0.0);
+    }
+    //cout << " eff[" << i << "] = " << eff_pp_xjz->GetBinContent(i) << endl;
   }
   eff_pp_dphi = (TH1D*)dphi_sum_stat_pp->Clone("eff_pp_dphi");
   for(int i=1; i<eff_pp_dphi->GetNbinsX()+1; i++){
@@ -301,11 +362,11 @@ void CompareCompatibility()
 
 
   TCanvas *c3 = new TCanvas("c3","c3");
-  c3->Divide(5,4);
+  c3->Divide(2,2);
   TCanvas *c4 = new TCanvas("c4","c4");
-  c4->Divide(5,4);
+  c4->Divide(2,2);
 
-  for(int i=0; i<20; i++){
+  for(int i=0; i<4; i++){
     sprintf(saythis,"toy_%d",i+1);
     RooDataSet *rooToy_dphi = (RooDataSet*)mytoysdir_dphi->Get(saythis);
     sprintf(saythis,"combinetoys_dphi_%d",i);
@@ -313,21 +374,45 @@ void CompareCompatibility()
     combinetoys_dphi[i]->Reset();
     PutToyInHisto(rooToy_dphi, combinetoys_dphi[i], eff_pp_dphi, 1);
 
+    //sprintf(saythis,"toy_%d",i+1);
+    //RooDataSet *rooToy_xjz = (RooDataSet*)mytoysdir_xjz->Get(saythis);
+    //sprintf(saythis,"combinetoys_xjz_%d",i);
+    //combinetoys_xjz[i] = (TH1D*)xjz_raw_stat_pb->Clone(saythis);
+    //combinetoys_xjz[i]->Reset();
+    //PutToyInHisto(rooToy_xjz, combinetoys_xjz[i], eff_pb_xjz, 2);
+    //combinetoys_xjz_hi[i]->Add(xjz_bkg_stat_pb, -1);
+
     sprintf(saythis,"toy_%d",i+1);
     RooDataSet *rooToy_xjz = (RooDataSet*)mytoysdir_xjz->Get(saythis);
-    sprintf(saythis,"combinetoys_xjz_%d",i);
-    combinetoys_xjz[i] = (TH1D*)xjz_raw_stat_pb->Clone(saythis);
-    combinetoys_xjz[i]->Reset();
-    PutToyInHisto(rooToy_xjz, combinetoys_xjz[i], eff_pp_xjz, 1);
+    sprintf(saythis,"combinetoys_xjz_pp_%d",i);
+    combinetoys_xjz_pp[i] = (TH1D*)xjz_raw_stat_pp->Clone(saythis);
+    combinetoys_xjz_pp[i]->Reset();
+    PutToyInHisto(rooToy_xjz, combinetoys_xjz_pp[i], eff_pp_xjz, 1);//pp
+    sprintf(saythis,"combinetoys_xjz_hi_%d",i);
+    combinetoys_xjz_hi[i] = (TH1D*)xjz_raw_stat_pb->Clone(saythis);
+    combinetoys_xjz_hi[i]->Reset();
+    PutToyInHisto(rooToy_xjz, combinetoys_xjz_hi[i], eff_pb_xjz, 2);//PbPb
+    combinetoys_xjz_hi[i]->Add(xjz_bkg_stat_pb, -1);
 
     c3->cd(i+1);
-    xjz_raw_stat_pb->SetMarkerColor(19);
-    xjz_raw_stat_pb->SetLineColor  (19);
-    xjz_raw_stat_pb->DrawCopy();
-    xjz_raw_stat_pb->SetMarkerColor(1);
-    xjz_raw_stat_pb->SetLineColor  (1);
-    xjz_sum_stat_pp->DrawCopy("same");
-    combinetoys_xjz[i]->DrawCopy("same");
+    xjz_sub_stat_pb->SetMarkerColor(16);
+    xjz_sub_stat_pb->SetLineColor  (16);
+    xjz_sub_stat_pb->DrawCopy();
+    xjz_sub_stat_pb->SetMarkerColor(1);
+    xjz_sub_stat_pb->SetLineColor  (1);
+    //xjz_sum_stat_pp->DrawCopy("same");
+    xjz_raw_stat_pp   ->SetMarkerStyle(20);
+    xjz_raw_stat_pp   ->SetMarkerColor(kGreen-6);
+    xjz_raw_stat_pp   ->SetLineColor  (kGreen-6);
+    xjz_raw_stat_pp->DrawCopy("same");
+    combinetoys_xjz_hi[i]   ->SetMarkerStyle(24);
+    combinetoys_xjz_hi[i]   ->SetMarkerColor(1);
+    combinetoys_xjz_hi[i]   ->SetLineColor  (1);
+    combinetoys_xjz_hi[i]->DrawCopy("same");
+    combinetoys_xjz_pp[i]   ->SetMarkerStyle(24);
+    combinetoys_xjz_pp[i]   ->SetMarkerColor(8);
+    combinetoys_xjz_pp[i]   ->SetLineColor  (8);
+    combinetoys_xjz_pp[i]->DrawCopy("same");
 
     c4->cd(i+1);
     dphi_raw_stat_pb->SetMarkerColor(19);
@@ -340,9 +425,34 @@ void CompareCompatibility()
 
   }
 
+  if(calculate_ks_from_toys){
 
+    for(int i=4; i<1000; i++){
+      sprintf(saythis,"toy_%d",i+1);
+      RooDataSet *rooToy_xjz = (RooDataSet*)mytoysdir_xjz->Get(saythis);
+      sprintf(saythis,"combinetoys_xjz_%d",i);
+      combinetoys_xjz_pp[i] = (TH1D*)xjz_raw_stat_pp->Clone(saythis);
+      combinetoys_xjz_pp[i]->Reset();
+      PutToyInHisto(rooToy_xjz, combinetoys_xjz_pp[i], eff_pp_xjz, 1);//pp
+      combinetoys_xjz_hi[i] = (TH1D*)xjz_raw_stat_pb->Clone(saythis);
+      combinetoys_xjz_hi[i]->Reset();
+      PutToyInHisto(rooToy_xjz, combinetoys_xjz_hi[i], eff_pb_xjz, 2);//PbPb
+      combinetoys_xjz_hi[i]->Add(xjz_bkg_stat_pb, -1);
+    }
 
+    deltaNLL_xjz->Reset();
+    deltaNLL_xjz = new TH1D("deltaNLL_xjz","Kolmogorov-Smirnov;KS of x_{JZ}",2550,0,5.5);
+    for(int i=0; i<1000; i++){
+      double kolo = CalcKoloSm(combinetoys_xjz_pp[i], combinetoys_xjz_hi[i], 1,10, 1, -1);
+      //if(i<50) cout << kolo << endl;
+      deltaNLL_xjz->Fill(kolo);
+    }
 
+    cout << "the q value for 2dNLL was  " << q_HC_xjz << endl;
+    q_HC_xjz  = CalcKoloSm(xjz_sum_stat_pp, xjz_raw_stat_pb, 1,10, 1, -1);
+    cout << "   now for KS_shape it is  " << q_HC_xjz << endl;
+
+  }
 
   dphi_xhat  = (TH1D*)dphi_raw_stat_pb->Clone("dphi_xhat");
   xjz_xhat   = (TH1D*)xjz_raw_stat_pb ->Clone("xjz_xhat");
@@ -551,13 +661,25 @@ void CompareCompatibility()
   cout << saythis << endl << endl;
 
   cout << "___ XJZ  ___" << endl;
-  sprintf(saythis,"2dNLL -->  q= %2.2f  pVal= %2.2f",q_HC_xjz,p_HC_xjz);
+  sprintf(saythis,"2dNLL -->  q= %2.2f  pVal= %2.5f",q_HC_xjz,p_HC_xjz);
   cout << saythis << endl;
   sprintf(saythis,"ChiSq -->  q= %2.2f  pVal= %2.2f",q_CS_xjz,p_CS_xjz);
   cout << saythis << endl;
   sprintf(saythis,"KolSm -->  q= %2.2f  pVal= %2.2f",q_KS_xjz,p_KS_xjz);
   cout << saythis << endl << endl;
 
+  if(frequentisttoys==1){
+    if(calculate_ks_from_toys==1)
+      cout << "pt" << ptbinKaya << "  KOLGORMOROV-SMIRNOV TEST !!  FREQUENTIST toys" << endl;
+    else
+      cout << "pt" << ptbinKaya << "  2dNLL TEST !! FREQUENTIST toys" << endl;
+  }
+  else{
+    if(calculate_ks_from_toys==1)
+      cout << "pt" << ptbinKaya << "  KOLGORMOROV-SMIRNOV TEST !!  regular Baysian toys" << endl;
+    else
+      cout << "pt" << ptbinKaya << "  2dNLL TEST !! regular Baysian toys" << endl;
+  }
 
 }
 
